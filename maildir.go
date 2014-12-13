@@ -89,7 +89,30 @@ func (d Dir) Unseen() ([]string, error) {
 
 // Keys returns a slice of valid keys to access messages by.
 func (d Dir) Keys() ([]string, error) {
-	f, err := os.Open(filepath.Join(string(d), "cur"))
+	k, err := d.keysForDir("new")
+	if err != nil {
+		return nil, err
+	}
+	k1, err := d.keysForDir("cur")
+	if err != nil {
+		return nil, err
+	}
+	k = append(k, k1...)
+	return k, nil
+}
+
+// ReadKeys returns a slice of valid keys to access read messages by.
+func (d Dir) ReadKeys() ([]string, error) {
+	return d.keysForDir("cur")
+}
+
+// Keys returns a slice of valid keys to access unread messages by.
+func (d Dir) UnreadKeys() ([]string, error) {
+	return d.keysForDir("new")
+}
+
+func (d Dir) keysForDir(dir string) ([]string, error) {
+	f, err := os.Open(filepath.Join(string(d), dir))
 	if err != nil {
 		return nil, err
 	}
