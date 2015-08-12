@@ -3,6 +3,7 @@ package maildir
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -84,6 +85,37 @@ func TestDelivery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	path, err := d.Filename(keys[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists(path) {
+		t.Fatal("File doesn't exist")
+	}
+
+	if cat(t, path) != msg {
+		t.Fatal("Content doesn't match")
+	}
+}
+
+func TestFilename(t *testing.T) {
+	t.Parallel()
+
+	var d Dir = "test_delivery"
+	err := d.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup(t, d)
+
+	var msg = "this is a message"
+	makeDelivery(t, d, msg)
+
+	keys, err := readDirNames(filepath.Join(string(d), "new"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	path, err := d.Filename(keys[0])
 	if err != nil {
 		t.Fatal(err)

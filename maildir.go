@@ -123,7 +123,7 @@ func (d Dir) Keys() ([]string, error) {
 
 // Filename returns the path to the file corresponding to the key.
 func (d Dir) Filename(key string) (string, error) {
-	matches, err := filepath.Glob(filepath.Join(string(d), "cur", key+"*"))
+	matches, err := filepath.Glob(filepath.Join(string(d), "/*/", key+"*"))
 	if err != nil {
 		return "", err
 	}
