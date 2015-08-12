@@ -167,3 +167,26 @@ func TestMove(t *testing.T) {
 	}
 
 }
+
+func TestKeys(t *testing.T) {
+	var d Dir = "test_keys"
+	err := d.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup(t, d)
+
+	want := 3
+	for i := 0; i < want; i++ {
+		makeDelivery(t, d, "msg")
+	}
+	keys, err := d.Keys()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := len(keys)
+	if got != want {
+		t.Errorf("d.Keys()\nwant: %d\n got: %d", want, got)
+	}
+}

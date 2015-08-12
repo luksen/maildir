@@ -89,17 +89,26 @@ func (d Dir) Unseen() ([]string, error) {
 	return keys, err
 }
 
-// Keys returns a slice of valid keys to access messages by.
-func (d Dir) Keys() ([]string, error) {
-	f, err := os.Open(filepath.Join(string(d), "cur"))
+func readDirNames(d string) ([]string, error) {
+	f, err := os.Open(d)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	names, err := f.Readdirnames(0)
-	if err != nil {
-		return nil, err
+	return f.Readdirnames(0)
+}
+
+// Keys returns a slice of valid keys to access messages by.
+func (d Dir) Keys() ([]string, error) {
+	names := []string{}
+	for _, dir := range []string{"cur", "new"} {
+		files, err := readDirNames(filepath.Join(string(d), dir))
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, files...)
 	}
+
 	var keys []string
 	for _, n := range names {
 		if n[0] != '.' {
