@@ -3,6 +3,7 @@ package maildir
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -130,6 +131,37 @@ func TestDelivery(t *testing.T) {
 	}
 }
 
+func TestFilename(t *testing.T) {
+	t.Parallel()
+
+	var d Dir = "test_delivery"
+	err := d.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup(t, d)
+
+	var msg = "this is a message"
+	makeDelivery(t, d, msg)
+
+	keys, err := readDirNames(filepath.Join(string(d), "new"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path, err := d.Filename(keys[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists(path) {
+		t.Fatal("File doesn't exist")
+	}
+
+	if cat(t, path) != msg {
+		t.Fatal("Content doesn't match")
+	}
+}
+
 func TestPurge(t *testing.T) {
 	t.Parallel()
 
@@ -199,4 +231,27 @@ func TestMove(t *testing.T) {
 		t.Fatal("Content doesn't match")
 	}
 
+}
+
+func TestKeys(t *testing.T) {
+	var d Dir = "test_keys"
+	err := d.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup(t, d)
+
+	want := 3
+	for i := 0; i < want; i++ {
+		makeDelivery(t, d, "msg")
+	}
+	keys, err := d.Keys()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := len(keys)
+	if got != want {
+		t.Errorf("d.Keys()\nwant: %d\n got: %d", want, got)
+	}
 }
