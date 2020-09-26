@@ -28,6 +28,12 @@ var id int64 = 10000
 // CreateMode holds the permissions used when creating a directory.
 const CreateMode = 0700
 
+var globEsc *strings.Replacer = strings.NewReplacer("[", "\\[",
+	"]", "\\]",
+	"*", "\\*",
+	"?", "\\?",
+	"\\", "\\\\")
+
 // A KeyError occurs when a key matches more or less than one message.
 type KeyError struct {
 	Key string // the (invalid) key
@@ -134,7 +140,7 @@ func (d Dir) Keys() ([]string, error) {
 
 // Filename returns the path to the file corresponding to the key.
 func (d Dir) Filename(key string) (string, error) {
-	matches, err := filepath.Glob(filepath.Join(string(d), "cur", key+"*"))
+	matches, err := filepath.Glob(globEsc.Replace(filepath.Join(string(d), "cur", key)) + "*")
 	if err != nil {
 		return "", err
 	}
