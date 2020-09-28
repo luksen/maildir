@@ -41,7 +41,7 @@ func cat(t *testing.T, path string) string {
 }
 
 // makeDelivery creates a new message
-func makeDelivery(t *testing.T, d Dir, msg string) {
+func makeDelivery(t *testing.T, d Dir, msg string) *Delivery {
 	del, err := d.NewDelivery()
 	if err != nil {
 		t.Fatal(err)
@@ -58,6 +58,7 @@ func makeDelivery(t *testing.T, d Dir, msg string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return del
 }
 
 func TestCreate(t *testing.T) {
@@ -131,15 +132,23 @@ func doTestDelivery(t *testing.T, dirName string) {
 	defer cleanup(t, d)
 
 	var msg = "this is a message"
-	makeDelivery(t, d, msg)
+	del := makeDelivery(t, d, msg)
+
+	path := d.quickFilename(del.key)
+	if path == "" {
+		t.Fatal("Delivered message was not found using quick key lookup")
+	}
 
 	keys, err := d.Unseen()
 	if err != nil {
 		t.Fatal(err)
 	}
-	path, err := d.Filename(keys[0])
+	path, err = d.Filename(keys[0])
 	if err != nil {
 		t.Fatal(err)
+	}
+	if path != d.quickFilename(keys[0]) {
+		t.Fatal("Unseen message was not found using quick key lookup")
 	}
 	if !exists(path) {
 		t.Fatal("File doesn't exist")
@@ -147,6 +156,57 @@ func doTestDelivery(t *testing.T, dirName string) {
 
 	if cat(t, path) != msg {
 		t.Fatal("Content doesn't match")
+	}
+}
+
+func TestSlowFilenameLookup(t *testing.T) {
+	t.Parallel()
+
+	var d Dir = "test_slow_lookup"
+	err := d.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup(t, d)
+	var msg = "this is a message"
+	del := makeDelivery(t, d, msg)
+	path, err := d.Filename(del.key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// intentionally mangle file name
+	newpath := path + ":2,XYZ"
+	err = os.Rename(path, newpath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// check it cannot be found using quick lookup
+	path = d.quickFilename(del.key)
+	if path != "" {
+		t.Fatal("Mangled unseen message found using quick lookup")
+	}
+	// check it can still be found using slow lookup
+	path, err = d.Filename(del.key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists(path) {
+		t.Fatal("File doesn't exist")
+	}
+	// same tests after moving to cur
+	keys, err := d.Unseen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path, err = d.Filename(keys[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists(path) {
+		t.Fatal("File doesn't exist")
+	}
+	if d.quickFilename(keys[0]) != "" {
+		t.Fatal("Unseen message was found using quick key lookup")
 	}
 }
 

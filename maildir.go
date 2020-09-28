@@ -132,12 +132,101 @@ func (d Dir) Keys() ([]string, error) {
 	return keys, nil
 }
 
+func fileExists(filename string) bool {
+	finfo, err := os.Stat(filename)
+	return err == nil && finfo.Mode().IsRegular()
+}
+
+var suffices []string = []string{
+	"",
+	"S",
+	"D",
+	"F",
+	"P",
+	"R",
+	"T",
+	"DF",
+	"DP",
+	"DR",
+	"DS",
+	"DT",
+	"FP",
+	"FR",
+	"FS",
+	"FT",
+	"PR",
+	"PS",
+	"PT",
+	"RS",
+	"RT",
+	"ST",
+	"DFP",
+	"DFR",
+	"DFS",
+	"DFT",
+	"DPR",
+	"DPS",
+	"DPT",
+	"DRS",
+	"DRT",
+	"DST",
+	"FPR",
+	"FPS",
+	"FPT",
+	"FRS",
+	"FRT",
+	"FST",
+	"PRS",
+	"PRT",
+	"PST",
+	"RST",
+	"DFPR",
+	"DFPS",
+	"DFPT",
+	"DFRS",
+	"DFRT",
+	"DFST",
+	"DPRS",
+	"DPRT",
+	"DPST",
+	"DRST",
+	"FPRS",
+	"FPRT",
+	"FPST",
+	"FRST",
+	"PRST",
+	"DFPRS",
+	"DFPRT",
+	"DFPST",
+	"DFRST",
+	"DPRST",
+	"FPRST",
+	"DFPRST"}
+
+// quick check for existance of legal (per DJB) file names for a key
+func (d Dir) quickFilename(key string) string {
+	// "new" files must not have :info suffix
+	if filename := filepath.Join(string(d), "new", key); fileExists(filename) {
+		return filename
+	}
+	// "cur" files must have :info suffix
+	filePrefix := filepath.Join(string(d), "cur", key+string(Separator)+"2,")
+	for _, suffix := range suffices {
+		if filename := filePrefix + suffix; fileExists(filename) {
+			return filename
+		}
+	}
+	return ""
+}
+
 var maildirSubdirs []string = []string{"cur", "new"}
 
 // Filename returns the path to the file corresponding to the key.
 func (d Dir) Filename(key string) (string, error) {
-	n := 0
-	var matchedFile string
+	if matchedFile := d.quickFilename(key); matchedFile != "" {
+		return matchedFile, nil
+	}
+	// full directory scan
 	for _, subDir := range maildirSubdirs {
 		dirPath := filepath.Join(string(d), subDir)
 		d, err := os.Open(dirPath)
@@ -151,17 +240,11 @@ func (d Dir) Filename(key string) (string, error) {
 		}
 		for _, name := range names {
 			if strings.HasPrefix(name, key) {
-				n++
-				if n == 1 {
-					matchedFile = filepath.Join(dirPath, name)
-				}
+				return filepath.Join(dirPath, name), nil
 			}
 		}
 	}
-	if n != 1 {
-		return "", &KeyError{key, n}
-	}
-	return matchedFile, nil
+	return "", &KeyError{key, 0}
 }
 
 // Header returns the corresponding mail header to a key.
