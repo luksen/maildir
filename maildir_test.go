@@ -61,15 +61,23 @@ func makeDelivery(t *testing.T, d Dir, msg string) {
 }
 
 func TestCreate(t *testing.T) {
+	doTestCreate(t, "test_create")
+}
+
+func TestCreateFunnyFolder(t *testing.T) {
+	doTestCreate(t, "test_create_[Funny]")
+}
+
+func doTestCreate(t *testing.T, dirName string) {
 	t.Parallel()
 
-	var d Dir = "test_create"
+	var d Dir = Dir(dirName)
 	err := d.Create()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	f, err := os.Open("test_create")
+	f, err := os.Open(dirName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,9 +113,17 @@ func TestCreate(t *testing.T) {
 }
 
 func TestDelivery(t *testing.T) {
+	doTestDelivery(t, "test_delivery")
+}
+
+func TestDeliveryFunnyFolder(t *testing.T) {
+	doTestDelivery(t, "test_delivery_[Funny]")
+}
+
+func doTestDelivery(t *testing.T, dirName string) {
 	t.Parallel()
 
-	var d Dir = "test_delivery"
+	var d Dir = Dir(dirName)
 	err := d.Create()
 	if err != nil {
 		t.Fatal(err)
