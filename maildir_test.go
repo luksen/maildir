@@ -54,6 +54,10 @@ func makeDelivery(t *testing.T, d Dir, msg string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	_, err = d.Filename(del.key)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestCreate(t *testing.T) {
