@@ -134,14 +134,30 @@ func (d Dir) Keys() ([]string, error) {
 
 // Filename returns the path to the file corresponding to the key.
 func (d Dir) Filename(key string) (string, error) {
-	matches, err := filepath.Glob(filepath.Join(string(d), "cur", key+"*"))
+	n := 0
+	var matchedFile string
+	dirPath := filepath.Join(string(d), "cur")
+	f, err := os.Open(dirPath)
 	if err != nil {
 		return "", err
 	}
-	if n := len(matches); n != 1 {
+	defer f.Close()
+	names, err := f.Readdirnames(-1)
+	if err != nil {
+		return "", err
+	}
+	for _, name := range names {
+		if strings.HasPrefix(name, key) {
+			if n == 0 {
+				matchedFile = filepath.Join(dirPath, name)
+			}
+			n++
+		}
+	}
+	if n != 1 {
 		return "", &KeyError{key, n}
 	}
-	return matches[0], nil
+	return matchedFile, nil
 }
 
 // Header returns the corresponding mail header to a key.

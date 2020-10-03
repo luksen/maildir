@@ -101,9 +101,17 @@ func TestCreate(t *testing.T) {
 }
 
 func TestDelivery(t *testing.T) {
+	doTestDelivery(t, "test_delivery")
+}
+
+func TestDeliveryFunnyFolder(t *testing.T) {
+	doTestDelivery(t, "test_delivery_[Funny]")
+}
+
+func doTestDelivery(t *testing.T, dirName string) {
 	t.Parallel()
 
-	var d Dir = "test_delivery"
+	var d Dir = Dir(dirName)
 	err := d.Create()
 	if err != nil {
 		t.Fatal(err)
