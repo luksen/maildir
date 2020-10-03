@@ -41,7 +41,7 @@ func cat(t *testing.T, path string) string {
 }
 
 // makeDelivery creates a new message
-func makeDelivery(t *testing.T, d Dir, msg string) {
+func makeDelivery(t *testing.T, d Dir, msg string) *Delivery {
 	del, err := d.NewDelivery()
 	if err != nil {
 		t.Fatal(err)
@@ -54,6 +54,7 @@ func makeDelivery(t *testing.T, d Dir, msg string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return del
 }
 
 func TestCreate(t *testing.T) {
@@ -135,6 +136,58 @@ func doTestDelivery(t *testing.T, dirName string) {
 
 	if cat(t, path) != msg {
 		t.Fatal("Content doesn't match")
+	}
+}
+
+func TestSlowFilenameLookup(t *testing.T) {
+	t.Parallel()
+
+	var d Dir = "test_slow_lookup"
+	err := d.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup(t, d)
+	var msg = "this is a message"
+	del := makeDelivery(t, d, msg)
+	_, err = d.Filename(del.key)
+	if err == nil {
+		t.Fatal("Must not return unseen message")
+	}
+	if keyerr, ok := err.(*KeyError); !(ok && keyerr.N == 0) {
+		t.Fatal("Expected Key error, n=0")
+	}
+	keys, err := d.Unseen()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path, err := d.Filename(keys[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists(path) {
+		t.Fatal("File doesn't exist")
+	}
+	if path != d.quickFilename(keys[0]) {
+		t.Fatal("quick and slow paths aren't equal")
+	}
+	// intentionally mangle file name
+	d.SetFlags(keys[0], "XYZ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// check it cannot be found using quick lookup
+	path = d.quickFilename(keys[0])
+	if path != "" {
+		t.Fatal("Mangled message must not be found using quick lookup")
+	}
+	// check it can still be found using slow lookup
+	path, err = d.Filename(keys[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists(path) {
+		t.Fatal("File doesn't exist")
 	}
 }
 
