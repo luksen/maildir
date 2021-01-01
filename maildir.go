@@ -110,7 +110,9 @@ func (d Dir) UnseenCount() (int, error) {
 	return c, nil
 }
 
-// Keys returns a slice of valid keys to access messages by.
+// Keys returns a slice of valid keys to access messages by. This only returns
+// keys for messages in cur. Use Unseen to access messages in new. All keys,
+// whether returned here or by Unseen, point to messages in cur.
 func (d Dir) Keys() ([]string, error) {
 	f, err := os.Open(filepath.Join(string(d), "cur"))
 	if err != nil {
