@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"net/mail"
 	"net/textproto"
@@ -348,11 +349,17 @@ func (d Dir) SetInfo(key, info string) error {
 	return err
 }
 
-// Key generates a new unique key as described in the Maildir specification.
-// For the third part of the key (delivery identifier) it uses an internal
-// counter, the process id and a cryptographical random number to ensure
-// uniqueness among messages delivered in the same second.
+// Key exposes the internal unique key generation. This function is deprecated.
 func Key() (string, error) {
+	fmt.Println("maildir: Key() is deprecated without replacement. See https://github.com/luksen/maildir/issues/5 for details.")
+	return generateKey()
+}
+
+// generateKey generates a new unique key as described in the Maildir
+// specification.  For the third part of the key (delivery identifier) it uses
+// an internal counter, the process id and a cryptographical random number to
+// ensure uniqueness among messages delivered in the same second.
+func generateKey() (string, error) {
 	var key string
 	key += strconv.FormatInt(time.Now().Unix(), 10)
 	key += "."
@@ -411,7 +418,7 @@ type Delivery struct {
 
 // NewDelivery creates a new Delivery.
 func (d Dir) NewDelivery() (*Delivery, error) {
-	key, err := Key()
+	key, err := generateKey()
 	if err != nil {
 		return nil, err
 	}
