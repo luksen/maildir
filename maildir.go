@@ -327,6 +327,8 @@ func (d Dir) Flags(key string) (string, error) {
 //	Flag "T" (trashed): the user has moved this message to the trash; the trash will be emptied by a later user action.
 //	Flag "D" (draft): the user considers this message a draft; toggled at user discretion.
 //	Flag "F" (flagged): user-defined flag; toggled at user discretion.
+//
+// Using only these standard flags will improve message retrieval speed.
 func (d Dir) SetFlags(key string, flags string) error {
 	info := "2,"
 	rs := runeSlice(flags)
